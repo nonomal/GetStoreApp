@@ -16,6 +16,7 @@ namespace GetStoreApp.UI.Controls.About
             new KeyValuePairModel(){ Key = "cnbluefire",Value = "https://github.com/cnbluefire" },
             new KeyValuePairModel(){ Key = "飞翔",Value = "https://fionlen.azurewebsites.net" },
             new KeyValuePairModel(){ Key = "MouriNaruto",Value = "https://github.com/MouriNaruto" },
+            new KeyValuePairModel(){ Key = "Ruofan",Value = "https://github.com/zhuxb711" },
             new KeyValuePairModel(){ Key = "TaylorShi",Value = "https://github.com/TaylorShi" },
             new KeyValuePairModel(){ Key = "wherewhere",Value = "https://github.com/wherewhere" },
         };

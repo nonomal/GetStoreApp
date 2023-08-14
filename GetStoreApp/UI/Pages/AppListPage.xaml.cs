@@ -14,8 +14,10 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
+using Windows.Foundation;
 using Windows.Management.Deployment;
 using Windows.Storage;
 using Windows.System;
@@ -28,6 +30,8 @@ namespace GetStoreApp.UI.Pages
     /// </summary>
     public sealed partial class AppListPage : Page, INotifyPropertyChanged
     {
+        private readonly object AppShortListObject = new object();
+
         private bool isInitialized = false;
 
         private PackageManager PackageManager { get; } = new PackageManager();
@@ -60,19 +64,6 @@ namespace GetStoreApp.UI.Pages
             }
         }
 
-        private bool _isPackageEmptyWithCondition = true;
-
-        public bool IsPackageEmptyWithCondition
-        {
-            get { return _isPackageEmptyWithCondition; }
-
-            set
-            {
-                _isPackageEmptyWithCondition = value;
-                OnPropertyChanged();
-            }
-        }
-
         private bool _isIncrease = true;
 
         public bool IsIncrease
@@ -99,32 +90,6 @@ namespace GetStoreApp.UI.Pages
             }
         }
 
-        private bool _isStorePackage = false;
-
-        public bool IsStorePackage
-        {
-            get { return _isStorePackage; }
-
-            set
-            {
-                _isStorePackage = value;
-                OnPropertyChanged();
-            }
-        }
-
-        private bool _isSideLoadedPackage = false;
-
-        public bool IsSideLoadedPackage
-        {
-            get { return _isSideLoadedPackage; }
-
-            set
-            {
-                _isSideLoadedPackage = value;
-                OnPropertyChanged();
-            }
-        }
-
         private AppListRuleSeletedType _selectedType = AppListRuleSeletedType.PackageName;
 
         public AppListRuleSeletedType SelectedType
@@ -134,6 +99,19 @@ namespace GetStoreApp.UI.Pages
             set
             {
                 _selectedType = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private PackageSignType _signType = PackageSignType.None | PackageSignType.Developer | PackageSignType.Enterprise | PackageSignType.Store | PackageSignType.System;
+
+        public PackageSignType SignType
+        {
+            get { return _signType; }
+
+            set
+            {
+                _signType = value;
                 OnPropertyChanged();
             }
         }
@@ -161,7 +139,7 @@ namespace GetStoreApp.UI.Pages
 
         private List<Package> MatchResultList;
 
-        public ObservableCollection<PackageModel> UWPAppDataList { get; } = new ObservableCollection<PackageModel>();
+        public ObservableCollection<PackageModel> AppShortList { get; } = new ObservableCollection<PackageModel>();
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -250,12 +228,76 @@ namespace GetStoreApp.UI.Pages
                 }
             };
 
-            UnInstallCommand.ExecuteRequested += async (sender, args) =>
+            UnInstallCommand.ExecuteRequested += (sender, args) =>
             {
                 string packageFullName = args.Parameter as string;
                 if (packageFullName is not null)
                 {
-                    await PackageManager.RemovePackageAsync(packageFullName);
+                    for (int index = 0; index < AppShortList.Count; index++)
+                    {
+                        if (AppShortList[index].Package.Id.FullName == packageFullName)
+                        {
+                            lock (AppShortListObject)
+                            {
+                                AppShortList[index].IsUnInstalling = true;
+                            }
+
+                            try
+                            {
+                                IAsyncOperationWithProgress<DeploymentResult, DeploymentProgress> uninstallOperation = PackageManager.RemovePackageAsync(packageFullName);
+
+                                ManualResetEvent uninstallCompletedEvent = new ManualResetEvent(false);
+
+                                uninstallOperation.Completed = (result, progress) =>
+                                {
+                                    // 卸载成功
+                                    if (result.Status is AsyncStatus.Completed)
+                                    {
+                                        ToastNotificationService.Show(NotificationArgs.UWPUnInstallSuccessfully, AppShortList[index].Package.DisplayName);
+
+                                        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                                        {
+                                            lock (AppShortListObject)
+                                            {
+                                                AppShortList.RemoveAt(index);
+                                            }
+                                        });
+                                    }
+
+                                    // 卸载失败
+                                    else if (result.Status is AsyncStatus.Error)
+                                    {
+                                        DeploymentResult uninstallResult = uninstallOperation.GetResults();
+                                        ToastNotificationService.Show(NotificationArgs.UWPUnInstallFailed,
+                                            AppShortList[index].Package.DisplayName,
+                                            uninstallResult.ExtendedErrorCode.HResult.ToString(),
+                                            uninstallResult.ErrorText
+                                            );
+
+                                        LogService.WriteLog(LogType.INFO, string.Format("UnInstall app {0} failed", AppShortList[index].Package.DisplayName), uninstallResult.ExtendedErrorCode);
+
+                                        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                                        {
+                                            lock (AppShortListObject)
+                                            {
+                                                AppShortList[index].IsUnInstalling = false;
+                                            }
+                                        });
+                                    }
+
+                                    uninstallCompletedEvent.Set();
+                                };
+
+                                uninstallCompletedEvent.WaitOne();
+                                uninstallCompletedEvent.Dispose();
+                            }
+                            catch (Exception e)
+                            {
+                                LogService.WriteLog(LogType.INFO, string.Format("UnInstall app {0} failed", AppShortList[index].Package.DisplayName), e);
+                            }
+                            break;
+                        }
+                    }
                 }
             };
         }
@@ -280,6 +322,11 @@ namespace GetStoreApp.UI.Pages
             return seletedType == comparedType;
         }
 
+        public bool IsSignatureItemChecked(PackageSignType selectedSignType, PackageSignType comparedSingType)
+        {
+            return selectedSignType.HasFlag(comparedSingType);
+        }
+
         /// <summary>
         /// 初始化已安装应用信息
         /// </summary>
@@ -290,9 +337,6 @@ namespace GetStoreApp.UI.Pages
                 await Task.Delay(500);
                 await GetInstalledAppsAsync();
                 await InitializeDataAsync();
-                IsPackageEmpty = MatchResultList.Count is 0;
-                IsPackageEmptyWithCondition = UWPAppDataList.Count is 0;
-                IsLoadedCompleted = true;
                 isInitialized = true;
             }
         }
@@ -306,11 +350,67 @@ namespace GetStoreApp.UI.Pages
         }
 
         /// <summary>
+        /// 根据排序方式对列表进行排序
+        /// </summary>
+        public async void OnSortWayClicked(object sender, RoutedEventArgs args)
+        {
+            ToggleMenuFlyoutItem toggleMenuFlyoutItem = sender.As<ToggleMenuFlyoutItem>();
+            if (toggleMenuFlyoutItem is not null)
+            {
+                IsIncrease = Convert.ToBoolean(toggleMenuFlyoutItem.Tag);
+                await InitializeDataAsync();
+            }
+        }
+
+        /// <summary>
+        /// 根据排序规则对列表进行排序
+        /// </summary>
+        public async void OnSortRuleClicked(object sender, RoutedEventArgs args)
+        {
+            ToggleMenuFlyoutItem toggleMenuFlyoutItem = sender.As<ToggleMenuFlyoutItem>();
+            if (toggleMenuFlyoutItem is not null)
+            {
+                SelectedType = (AppListRuleSeletedType)toggleMenuFlyoutItem.Tag;
+                await InitializeDataAsync();
+            }
+        }
+
+        /// <summary>
         /// 显示过滤规则
         /// </summary>
         public void OnFilterClicked(object sender, RoutedEventArgs args)
         {
             FlyoutBase.ShowAttachedFlyout(sender.As<FrameworkElement>());
+        }
+
+        /// <summary>
+        /// 根据过滤方式对列表进行过滤
+        /// </summary>
+        public async void OnFilterWayClicked(object sender, RoutedEventArgs args)
+        {
+            IsFramework = !IsFramework;
+            await InitializeDataAsync();
+        }
+
+        /// <summary>
+        /// 根据签名规则进行过滤
+        /// </summary>
+        public async void OnSignatureRuleClicked(object sender, RoutedEventArgs args)
+        {
+            ToggleMenuFlyoutItem toggleMenuFlyoutItem = sender.As<ToggleMenuFlyoutItem>();
+            if (toggleMenuFlyoutItem is not null)
+            {
+                if (SignType.HasFlag((PackageSignType)toggleMenuFlyoutItem.Tag))
+                {
+                    SignType &= ~(PackageSignType)toggleMenuFlyoutItem.Tag;
+                }
+                else
+                {
+                    SignType |= (PackageSignType)toggleMenuFlyoutItem.Tag;
+                }
+
+                await InitializeDataAsync();
+            }
         }
 
         /// <summary>
@@ -324,9 +424,6 @@ namespace GetStoreApp.UI.Pages
             await Task.Delay(500);
             await GetInstalledAppsAsync();
             await InitializeDataAsync();
-            IsPackageEmpty = MatchResultList.Count is 0;
-            IsPackageEmptyWithCondition = UWPAppDataList.Count is 0;
-            IsLoadedCompleted = true;
         }
 
         /// <summary>
@@ -345,69 +442,175 @@ namespace GetStoreApp.UI.Pages
             await Task.Run(() =>
             {
                 MatchResultList = PackageManager.FindPackagesForUser(string.Empty).ToList();
+                if (MatchResultList is not null)
+                {
+                    DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                    {
+                        IsPackageEmpty = MatchResultList.Count is 0;
+                    });
+                }
             });
         }
 
-        private async Task InitializeDataAsync(bool hasSearchText = false)
+        /// <summary>
+        /// 初始化列表数据
+        /// </summary>
+        public async Task InitializeDataAsync(bool hasSearchText = false)
         {
-            UWPAppDataList.Clear();
+            lock (AppShortListObject)
+            {
+                IsLoadedCompleted = false;
+                AppShortList.Clear();
+            }
+
             if (MatchResultList is not null)
             {
-                if (hasSearchText)
+                await Task.Run(() =>
                 {
-                    await Task.Run(() =>
+                    // 备份数据
+                    List<Package> backupList = MatchResultList;
+                    List<Package> appTypesList;
+
+                    // 根据选项是否筛选包含框架包的数据
+                    if (IsFramework)
                     {
-                        List<Package> matchWithConditionList = MatchResultList.Where(matchItem =>
+                        appTypesList = backupList.Where(item => item.IsFramework == IsFramework).ToList();
+                    }
+                    else
+                    {
+                        appTypesList = backupList;
+                    }
+
+                    List<Package> filteredList = new List<Package>();
+                    if (SignType.HasFlag(PackageSignType.Store))
+                    {
+                        filteredList.AddRange(appTypesList.Where(item => item.SignatureKind == PackageSignatureKind.Store));
+                    }
+
+                    if (SignType.HasFlag(PackageSignType.System))
+                    {
+                        filteredList.AddRange(appTypesList.Where(item => item.SignatureKind == PackageSignatureKind.System));
+                    }
+
+                    if (SignType.HasFlag(PackageSignType.Enterprise))
+                    {
+                        filteredList.AddRange(appTypesList.Where(item => item.SignatureKind == PackageSignatureKind.Enterprise));
+                    }
+
+                    if (SignType.HasFlag(PackageSignType.Developer))
+                    {
+                        filteredList.AddRange(appTypesList.Where(item => item.SignatureKind == PackageSignatureKind.Developer));
+                    }
+
+                    if (SignType.HasFlag(PackageSignType.None))
+                    {
+                        filteredList.AddRange(appTypesList.Where(item => item.SignatureKind == PackageSignatureKind.None));
+                    }
+
+                    // 对过滤后的列表数据进行排序
+                    switch (SelectedType)
+                    {
+                        case AppListRuleSeletedType.PackageName:
+                            {
+                                if (IsIncrease)
+                                {
+                                    filteredList = filteredList.OrderBy(item => item.DisplayName).ToList();
+                                }
+                                else
+                                {
+                                    filteredList = filteredList.OrderByDescending(item => item.DisplayName).ToList();
+                                }
+                                break;
+                            }
+                        case AppListRuleSeletedType.PublisherName:
+                            {
+                                if (IsIncrease)
+                                {
+                                    filteredList = filteredList.OrderBy(item => item.PublisherDisplayName).ToList();
+                                }
+                                else
+                                {
+                                    filteredList = filteredList.OrderByDescending(item => item.PublisherDisplayName).ToList();
+                                }
+                                break;
+                            }
+                        case AppListRuleSeletedType.InstallDate:
+                            {
+                                if (IsIncrease)
+                                {
+                                    filteredList = filteredList.OrderBy(item => item.InstalledDate).ToList();
+                                }
+                                else
+                                {
+                                    filteredList = filteredList.OrderByDescending(item => item.InstalledDate).ToList();
+                                }
+                                break;
+                            }
+                    }
+
+                    // 根据搜索条件对搜索符合要求的数据
+                    if (hasSearchText)
+                    {
+                        filteredList = filteredList.Where(matchItem =>
                             matchItem.DisplayName.Contains(SearchText) ||
                             matchItem.Description.Contains(SearchText) ||
                             matchItem.PublisherDisplayName.Contains(SearchText)).ToList();
 
-                        DispatcherQueue.TryEnqueue(async () =>
+                        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
                         {
-                            foreach (Package matchwithConditionItem in matchWithConditionList)
+                            lock (AppShortListObject)
                             {
-                                try
+                                foreach (Package filteredItem in filteredList)
                                 {
-                                    if (File.Exists(matchwithConditionItem.Logo.OriginalString))
+                                    try
                                     {
-                                        UWPAppDataList.Add(new PackageModel()
+                                        AppShortList.Add(new PackageModel()
                                         {
                                             IsUnInstalling = false,
-                                            Package = matchwithConditionItem
+                                            Package = filteredItem,
+                                            AppListEntryCount = filteredItem.GetAppListEntries().Count,
                                         });
+                                        Task.Delay(1);
                                     }
-                                    await Task.Delay(1);
+                                    catch (Exception)
+                                    {
+                                        continue;
+                                    }
                                 }
-                                catch (Exception)
-                                {
-                                    continue;
-                                }
+
+                                IsLoadedCompleted = true;
                             }
                         });
-                    });
-                }
-                else
-                {
-                    foreach (Package matchItem in MatchResultList.OrderBy(item => item.PublisherDisplayName).ToList())
-                    {
-                        try
-                        {
-                            if (File.Exists(matchItem.Logo.OriginalString))
-                            {
-                                UWPAppDataList.Add(new PackageModel()
-                                {
-                                    IsUnInstalling = false,
-                                    Package = matchItem
-                                });
-                            }
-                            await Task.Delay(1);
-                        }
-                        catch (Exception)
-                        {
-                            continue;
-                        }
                     }
-                }
+                    else
+                    {
+                        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                        {
+                            lock (AppShortListObject)
+                            {
+                                foreach (Package filteredItem in filteredList)
+                                {
+                                    try
+                                    {
+                                        AppShortList.Add(new PackageModel()
+                                        {
+                                            IsUnInstalling = false,
+                                            Package = filteredItem,
+                                            AppListEntryCount = filteredItem.GetAppListEntries().Count
+                                        });
+                                        Task.Delay(1);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                IsLoadedCompleted = true;
+                            }
+                        });
+                    }
+                });
             }
         }
     }

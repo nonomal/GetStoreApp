@@ -69,26 +69,29 @@ namespace GetStoreApp.Views.Pages
         /// <summary>
         /// 根据输入的内容检索应用
         /// </summary>
-        public void OnQuerySubmitted(object sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        public async void OnQuerySubmitted(object sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             AppListPage appListPage = UWPAppFrame.Content.As<AppListPage>();
             if (appListPage.Content is not null)
             {
                 appListPage.SearchText = SearchText;
+                await appListPage.InitializeDataAsync(true);
             }
         }
 
         /// <summary>
         /// 文本输入框内容为空时，复原原来的内容
         /// </summary>
-        public void OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs args)
+        public async void OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             AutoSuggestBox autoSuggestBox = sender.As<AutoSuggestBox>();
-            if (autoSuggestBox is not null)
+            if (autoSuggestBox is not null && autoSuggestBox.Text == string.Empty)
             {
-                if (autoSuggestBox.Text == string.Empty/* && MatchResultList is not null*/)
+                AppListPage appListPage = UWPAppFrame.Content.As<AppListPage>();
+                if (appListPage.Content is not null)
                 {
-                    //await InitializeDataAsync();
+                    appListPage.SearchText = string.Empty;
+                    await appListPage.InitializeDataAsync();
                 }
             }
         }

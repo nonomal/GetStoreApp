@@ -56,8 +56,8 @@
             <TextBlock
                 Grid.Column="3"
                 VerticalAlignment="Center"
-                Text="{x:Bind LocalizeUWPAppCountInfo(UWPAppDataList.Count), Mode=OneWay}"
-                ToolTipService.ToolTip="{x:Bind LocalizeUWPAppCountInfo(UWPAppDataList.Count), Mode=OneWay}" />
+                Text="{x:Bind LocalizeUWPAppCountInfo(AppShortList.Count), Mode=OneWay}"
+                ToolTipService.ToolTip="{x:Bind LocalizeUWPAppCountInfo(AppShortList.Count), Mode=OneWay}" />
 
             <StackPanel
                 Grid.Column="4"
@@ -81,7 +81,7 @@
 
                     <FlyoutBase.AttachedFlyout>
                         <MenuFlyout MenuFlyoutPresenterStyle="{StaticResource MenuFlyoutPresenterStyle}" Placement="Bottom">
-                            <MenuFlyoutSubItem Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortWay')}">
+                            <MenuFlyoutSubItem Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortWay')}" ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortWay')}">
                                 <MenuFlyoutSubItem.Style>
                                     <Style BasedOn="{StaticResource DefaultMenuFlyoutSubItemStyle}" TargetType="MenuFlyoutSubItem">
                                         <Setter Property="Height" Value="32" />
@@ -90,17 +90,23 @@
                                 </MenuFlyoutSubItem.Style>
 
                                 <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSortWayClicked}"
                                     IsChecked="{x:Bind IsIncrease, Mode=OneWay}"
                                     Style="{StaticResource ToggleMenuFlyoutItemStyle}"
-                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPAPP/SortIncrease')}" />
+                                    Tag="True"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortIncrease')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortIncrease')}" />
 
                                 <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSortWayClicked}"
                                     IsChecked="{x:Bind converter:ValueConverterHelper.BooleanReverseConvert(IsIncrease), Mode=OneWay}"
                                     Style="{StaticResource ToggleMenuFlyoutItemStyle}"
-                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPAPP/SortDecrease')}" />
+                                    Tag="False"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortDecrease')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortDecrease')}" />
                             </MenuFlyoutSubItem>
 
-                            <MenuFlyoutSubItem Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortRule')}">
+                            <MenuFlyoutSubItem Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortRule')}" ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortRule')}">
                                 <MenuFlyoutSubItem.Style>
                                     <Style BasedOn="{StaticResource DefaultMenuFlyoutSubItemStyle}" TargetType="MenuFlyoutSubItem">
                                         <Setter Property="Height" Value="32" />
@@ -109,18 +115,28 @@
                                 </MenuFlyoutSubItem.Style>
 
                                 <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSortRuleClicked}"
                                     IsChecked="{x:Bind IsItemChecked(SelectedType, enum:AppListRuleSeletedType.PackageName), Mode=OneWay}"
                                     Style="{StaticResource ToggleMenuFlyoutItemStyle}"
-                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPAPP/SortByDisplayName')}" />
+                                    Tag="{x:Bind enum:AppListRuleSeletedType.PackageName}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortByDisplayName')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortByDisplayName')}" />
 
                                 <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSortRuleClicked}"
                                     IsChecked="{x:Bind IsItemChecked(SelectedType, enum:AppListRuleSeletedType.PublisherName), Mode=OneWay}"
                                     Style="{StaticResource ToggleMenuFlyoutItemStyle}"
-                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPAPP/SortByPublisher')}" />
+                                    Tag="{x:Bind enum:AppListRuleSeletedType.PublisherName}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortByPublisher')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortByPublisher')}" />
+
                                 <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSortRuleClicked}"
                                     IsChecked="{x:Bind IsItemChecked(SelectedType, enum:AppListRuleSeletedType.InstallDate), Mode=OneWay}"
                                     Style="{StaticResource ToggleMenuFlyoutItemStyle}"
-                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPAPP/SortByInstalledDate')}" />
+                                    Tag="{x:Bind enum:AppListRuleSeletedType.InstallDate}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortByInstalledDate')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SortByInstalledDate')}" />
                             </MenuFlyoutSubItem>
                         </MenuFlyout>
                     </FlyoutBase.AttachedFlyout>
@@ -140,20 +156,70 @@
 
                     <FlyoutBase.AttachedFlyout>
                         <MenuFlyout MenuFlyoutPresenterStyle="{StaticResource MenuFlyoutPresenterStyle}" Placement="Bottom">
-                            <ToggleMenuFlyoutItem
-                                IsChecked="{x:Bind IsFramework, Mode=OneWay}"
-                                Style="{StaticResource ToggleMenuFlyoutItemStyle}"
-                                Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/FilterByIsFramework')}" />
+                            <MenuFlyoutSubItem Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/AppType')}" ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/AppType')}">
+                                <MenuFlyoutSubItem.Style>
+                                    <Style BasedOn="{StaticResource DefaultMenuFlyoutSubItemStyle}" TargetType="MenuFlyoutSubItem">
+                                        <Setter Property="Height" Value="32" />
+                                        <Setter Property="Padding" Value="11,0,11,0" />
+                                    </Style>
+                                </MenuFlyoutSubItem.Style>
 
-                            <ToggleMenuFlyoutItem
-                                IsChecked="{x:Bind IsStorePackage, Mode=OneWay}"
-                                Style="{StaticResource ToggleMenuFlyoutItemStyle}"
-                                Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/FilterByIsStorePackage')}" />
+                                <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnFilterWayClicked}"
+                                    IsChecked="{x:Bind IsFramework, Mode=OneWay}"
+                                    Style="{StaticResource ToggleMenuFlyoutItemStyle}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/IsFramework')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/IsFramework')}" />
+                            </MenuFlyoutSubItem>
 
-                            <ToggleMenuFlyoutItem
-                                IsChecked="{x:Bind IsSideLoadedPackage, Mode=OneWay}"
-                                Style="{StaticResource ToggleMenuFlyoutItemStyle}"
-                                Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/FilterByIsSideloadPackage')}" />
+                            <MenuFlyoutSubItem Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureType')}" ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureType')}">
+                                <MenuFlyoutSubItem.Style>
+                                    <Style BasedOn="{StaticResource DefaultMenuFlyoutSubItemStyle}" TargetType="MenuFlyoutSubItem">
+                                        <Setter Property="Height" Value="32" />
+                                        <Setter Property="Padding" Value="11,0,11,0" />
+                                    </Style>
+                                </MenuFlyoutSubItem.Style>
+
+                                <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSignatureRuleClicked}"
+                                    IsChecked="{x:Bind IsSignatureItemChecked(SignType, enum:PackageSignType.Store), Mode=OneWay}"
+                                    Style="{StaticResource ToggleMenuFlyoutItemStyle}"
+                                    Tag="{x:Bind enum:PackageSignType.Store}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureStore')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureStore')}" />
+
+                                <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSignatureRuleClicked}"
+                                    IsChecked="{x:Bind IsSignatureItemChecked(SignType, enum:PackageSignType.System), Mode=OneWay}"
+                                    Style="{StaticResource ToggleMenuFlyoutItemStyle}"
+                                    Tag="{x:Bind enum:PackageSignType.System}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureSystem')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureSystem')}" />
+
+                                <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSignatureRuleClicked}"
+                                    IsChecked="{x:Bind IsSignatureItemChecked(SignType, enum:PackageSignType.Enterprise), Mode=OneWay}"
+                                    Style="{StaticResource ToggleMenuFlyoutItemStyle}"
+                                    Tag="{x:Bind enum:PackageSignType.Enterprise}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureEnterprise')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureEnterprise')}" />
+
+                                <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSignatureRuleClicked}"
+                                    IsChecked="{x:Bind IsSignatureItemChecked(SignType, enum:PackageSignType.Developer), Mode=OneWay}"
+                                    Style="{StaticResource ToggleMenuFlyoutItemStyle}"
+                                    Tag="{x:Bind enum:PackageSignType.Developer}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureDeveloper')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureDeveloper')}" />
+
+                                <ToggleMenuFlyoutItem
+                                    Click="{x:Bind OnSignatureRuleClicked}"
+                                    IsChecked="{x:Bind IsSignatureItemChecked(SignType, enum:PackageSignType.None), Mode=OneWay}"
+                                    Style="{StaticResource ToggleMenuFlyoutItemStyle}"
+                                    Tag="{x:Bind enum:PackageSignType.None}"
+                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureNone')}"
+                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/SignatureNone')}" />
+                            </MenuFlyoutSubItem>
                         </MenuFlyout>
                     </FlyoutBase.AttachedFlyout>
                 </MenuFlyoutItem>
@@ -243,7 +309,7 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="{StaticResource ControlCornerRadius}"
-                    Visibility="{x:Bind converter:ValueConverterHelper.BooleanToVisibilityConvert(IsPackageEmptyWithCondition), Mode=OneWay}">
+                    Visibility="{x:Bind converter:ValueConverterHelper.IntToVisibilityReverseConvert(AppShortList.Count), Mode=OneWay}">
                     <TextBlock
                         Margin="0,10,0,10"
                         VerticalAlignment="Center"
@@ -255,13 +321,13 @@
                     Grid.Row="1"
                     Padding="30,0,30,30"
                     ItemContainerStyle="{StaticResource CardListViewItemContainerStyle}"
-                    ItemsSource="{x:Bind UWPAppDataList, Mode=OneWay}"
+                    ItemsSource="{x:Bind AppShortList, Mode=OneWay}"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.HorizontalScrollMode="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Auto"
                     ScrollViewer.VerticalScrollMode="Enabled"
                     SelectionMode="None"
-                    Visibility="{x:Bind converter:ValueConverterHelper.IntToVisibilityConvert(UWPAppDataList.Count), Mode=OneWay}">
+                    Visibility="{x:Bind converter:ValueConverterHelper.IntToVisibilityConvert(AppShortList.Count), Mode=OneWay}">
 
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="uwpApp:PackageModel">
@@ -292,7 +358,7 @@
                                         CornerRadius="4">
                                         <ImageIcon>
                                             <ImageIcon.Source>
-                                                <BitmapImage UriSource="{x:Bind Package.Logo}" />
+                                                <BitmapImage UriSource="{x:Bind converter:ValueCheckConverterHelper.GetAppLogo(Package)}" />
                                             </ImageIcon.Source>
                                         </ImageIcon>
                                     </Grid>
@@ -354,21 +420,31 @@
                                                     CommandParameter="{x:Bind Package}"
                                                     Style="{StaticResource MenuFlyoutItemStyle}"
                                                     Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/OpenApp')}"
-                                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/OpenApp')}" />
+                                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/OpenApp')}"
+                                                    Visibility="{x:Bind converter:ValueConverterHelper.IntToVisibilityConvert(AppListEntryCount)}" />
 
                                                 <MenuFlyoutItem
                                                     Command="{Binding ElementName=AppListRoot, Path=OpenStoreCommand, Mode=OneTime}"
                                                     CommandParameter="{x:Bind Package.Id.FamilyName}"
                                                     Style="{StaticResource MenuFlyoutItemStyle}"
                                                     Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/OpenStore')}"
-                                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/OpenStore')}" />
+                                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/OpenStore')}"
+                                                    Visibility="{x:Bind converter:ValueConverterHelper.IntToVisibilityConvert(AppListEntryCount)}" />
 
                                                 <MenuFlyoutItem
                                                     Command="{Binding ElementName=AppListRoot, Path=GetPackageCommand, Mode=OneTime}"
                                                     CommandParameter="{x:Bind Package.Id.FamilyName}"
                                                     Style="{StaticResource MenuFlyoutItemStyle}"
                                                     Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/GetPackage')}"
-                                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/GetPackage')}" />
+                                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/GetPackage')}"
+                                                    Visibility="{x:Bind converter:ValueConverterHelper.IntToVisibilityConvert(AppListEntryCount)}" />
+
+                                                <MenuFlyoutItem
+                                                    Command="{Binding ElementName=AppListRoot, Path=OpenManifestCommand, Mode=OneTime}"
+                                                    CommandParameter="{x:Bind Package}"
+                                                    Style="{StaticResource MenuFlyoutItemStyle}"
+                                                    Text="{x:Bind root:ResourceService.GetLocalized('UWPApp/OpenManifest')}"
+                                                    ToolTipService.ToolTip="{x:Bind root:ResourceService.GetLocalized('UWPApp/OpenManifest')}" />
 
                                                 <MenuFlyoutSeparator />
 

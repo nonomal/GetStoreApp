@@ -1,7 +1,9 @@
 ﻿using GetStoreApp.Services.Root;
 using Microsoft.UI.Xaml;
 using System;
+using System.Diagnostics;
 using System.IO;
+using Windows.ApplicationModel;
 
 namespace GetStoreApp.Helpers.Converters
 {
@@ -73,6 +75,14 @@ namespace GetStoreApp.Helpers.Converters
         }
 
         /// <summary>
+        /// 检查应用是否为商店应用
+        /// </summary>
+        public static bool IsStorePackage(Package packagePath)
+        {
+            return packagePath.SignatureKind is PackageSignatureKind.Store;
+        }
+
+        /// <summary>
         /// 历史记录按时间排序单选框检查
         /// </summary>
         public static bool TimeSortValueCheck(bool value, bool checkValue)
@@ -86,6 +96,21 @@ namespace GetStoreApp.Helpers.Converters
         public static Visibility IsAppListPageCheck(int count)
         {
             return count is 1 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// 检查应用图标是否存在，不存在返回空图标
+        /// </summary>
+        public static Uri GetAppLogo(Package packagePath)
+        {
+            try
+            {
+                return packagePath.Logo;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

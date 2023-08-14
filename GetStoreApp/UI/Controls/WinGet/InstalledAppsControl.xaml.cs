@@ -29,8 +29,10 @@ namespace GetStoreApp.UI.Controls.WinGet
     /// </summary>
     public sealed partial class InstalledAppsControl : Grid, INotifyPropertyChanged
     {
-        private PackageManager InstalledAppsManager { get; set; }
+        private readonly object InstalledAppsDataListObject = new object();
         private bool isInitialized = false;
+
+        private PackageManager InstalledAppsManager { get; set; }
 
         private bool _isLoadedCompleted = false;
 
@@ -105,7 +107,7 @@ namespace GetStoreApp.UI.Controls.WinGet
                         // 卸载成功，从列表中删除该应用
                         if (unInstallResult.Status is UninstallResultStatus.Ok)
                         {
-                            ToastNotificationService.Show(NotificationArgs.UnInstallSuccessfully, installedApps.AppName);
+                            ToastNotificationService.Show(NotificationArgs.WinGetUnInstallSuccessfully, installedApps.AppName);
 
                             // 检测是否需要重启设备完成应用的卸载，如果是，询问用户是否需要重启设备
                             if (unInstallResult.RebootRequired)
@@ -144,20 +146,20 @@ namespace GetStoreApp.UI.Controls.WinGet
                         }
                         else
                         {
-                            ToastNotificationService.Show(NotificationArgs.UnInstallFailed, installedApps.AppName);
+                            ToastNotificationService.Show(NotificationArgs.WinGetUnInstallFailed, installedApps.AppName);
                         }
                     }
                     // 操作被用户所取消异常
                     catch (OperationCanceledException e)
                     {
                         LogService.WriteLog(LogType.INFO, "App uninstalling operation canceled.", e);
-                        ToastNotificationService.Show(NotificationArgs.UnInstallFailed, installedApps.AppName);
+                        ToastNotificationService.Show(NotificationArgs.WinGetUnInstallFailed, installedApps.AppName);
                     }
                     // 其他异常
                     catch (Exception e)
                     {
                         LogService.WriteLog(LogType.ERROR, "App uninstalling failed.", e);
-                        ToastNotificationService.Show(NotificationArgs.UnInstallFailed, installedApps.AppName);
+                        ToastNotificationService.Show(NotificationArgs.WinGetUnInstallFailed, installedApps.AppName);
                     }
                 }
             };
@@ -208,7 +210,7 @@ namespace GetStoreApp.UI.Controls.WinGet
                 }
                 await Task.Delay(500);
                 await GetInstalledAppsAsync();
-                await InitializeDataAsync();
+                InitializeData();
                 IsInstalledAppsEmpty = MatchResultList.Count is 0;
                 IsLoadedCompleted = true;
                 isInitialized = true;
@@ -225,7 +227,7 @@ namespace GetStoreApp.UI.Controls.WinGet
             SearchText = string.Empty;
             await Task.Delay(500);
             await GetInstalledAppsAsync();
-            await InitializeDataAsync();
+            InitializeData();
             IsInstalledAppsEmpty = MatchResultList.Count is 0;
             IsLoadedCompleted = true;
         }
@@ -233,22 +235,22 @@ namespace GetStoreApp.UI.Controls.WinGet
         /// <summary>
         /// 根据输入的内容检索应用
         /// </summary>
-        public async void OnQuerySubmitted(object sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        public void OnQuerySubmitted(object sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            await InitializeDataAsync(true);
+            InitializeData(true);
         }
 
         /// <summary>
         /// 文本输入框内容为空时，复原原来的内容
         /// </summary>
-        public async void OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs args)
+        public void OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             AutoSuggestBox autoSuggestBox = sender.As<AutoSuggestBox>();
             if (autoSuggestBox is not null)
             {
                 if (autoSuggestBox.Text == string.Empty && MatchResultList is not null)
                 {
-                    await InitializeDataAsync();
+                    InitializeData();
                 }
             }
         }
@@ -293,16 +295,40 @@ namespace GetStoreApp.UI.Controls.WinGet
         /// <summary>
         /// 初始化列表数据
         /// </summary>
-        private async Task InitializeDataAsync(bool hasSearchText = false)
+        private void InitializeData(bool hasSearchText = false)
         {
-            InstalledAppsDataList.Clear();
+            lock (InstalledAppsDataListObject)
+            {
+                InstalledAppsDataList.Clear();
+            }
+
             if (MatchResultList is not null)
             {
                 if (hasSearchText)
                 {
-                    foreach (MatchResult matchItem in MatchResultList)
+                    lock (InstalledAppsDataListObject)
                     {
-                        if (matchItem.CatalogPackage.InstalledVersion.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+                        foreach (MatchResult matchItem in MatchResultList)
+                        {
+                            if (matchItem.CatalogPackage.InstalledVersion.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+                            {
+                                InstalledAppsDataList.Add(new InstalledAppsModel()
+                                {
+                                    AppID = matchItem.CatalogPackage.InstalledVersion.Id,
+                                    AppName = string.IsNullOrEmpty(matchItem.CatalogPackage.InstalledVersion.DisplayName) ? ResourceService.GetLocalized("WinGet/Unknown") : matchItem.CatalogPackage.InstalledVersion.DisplayName,
+                                    AppPublisher = string.IsNullOrEmpty(matchItem.CatalogPackage.InstalledVersion.Publisher) ? ResourceService.GetLocalized("WinGet/Unknown") : matchItem.CatalogPackage.InstalledVersion.Publisher,
+                                    AppVersion = string.IsNullOrEmpty(matchItem.CatalogPackage.InstalledVersion.Version) ? ResourceService.GetLocalized("WinGet/Unknown") : matchItem.CatalogPackage.InstalledVersion.Version,
+                                });
+                                Task.Delay(1);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    lock (InstalledAppsDataListObject)
+                    {
+                        foreach (MatchResult matchItem in MatchResultList)
                         {
                             InstalledAppsDataList.Add(new InstalledAppsModel()
                             {
@@ -311,22 +337,8 @@ namespace GetStoreApp.UI.Controls.WinGet
                                 AppPublisher = string.IsNullOrEmpty(matchItem.CatalogPackage.InstalledVersion.Publisher) ? ResourceService.GetLocalized("WinGet/Unknown") : matchItem.CatalogPackage.InstalledVersion.Publisher,
                                 AppVersion = string.IsNullOrEmpty(matchItem.CatalogPackage.InstalledVersion.Version) ? ResourceService.GetLocalized("WinGet/Unknown") : matchItem.CatalogPackage.InstalledVersion.Version,
                             });
-                            await Task.Delay(1);
+                            Task.Delay(1);
                         }
-                    }
-                }
-                else
-                {
-                    foreach (MatchResult matchItem in MatchResultList)
-                    {
-                        InstalledAppsDataList.Add(new InstalledAppsModel()
-                        {
-                            AppID = matchItem.CatalogPackage.InstalledVersion.Id,
-                            AppName = string.IsNullOrEmpty(matchItem.CatalogPackage.InstalledVersion.DisplayName) ? ResourceService.GetLocalized("WinGet/Unknown") : matchItem.CatalogPackage.InstalledVersion.DisplayName,
-                            AppPublisher = string.IsNullOrEmpty(matchItem.CatalogPackage.InstalledVersion.Publisher) ? ResourceService.GetLocalized("WinGet/Unknown") : matchItem.CatalogPackage.InstalledVersion.Publisher,
-                            AppVersion = string.IsNullOrEmpty(matchItem.CatalogPackage.InstalledVersion.Version) ? ResourceService.GetLocalized("WinGet/Unknown") : matchItem.CatalogPackage.InstalledVersion.Version,
-                        });
-                        await Task.Delay(1);
                     }
                 }
             }

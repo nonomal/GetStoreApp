@@ -424,7 +424,15 @@ namespace GetStoreApp.Views.Windows
         /// </summary>
         public void OnBackRequestedClicked(object sender, RoutedEventArgs args)
         {
-            NavigationService.NavigationFrom();
+            UWPAppPage uwpAppPage = WindowFrame.Content.As<UWPAppPage>();
+            if (uwpAppPage is not null && uwpAppPage.BreadDataList.Count is 2)
+            {
+                uwpAppPage.BackToAppList();
+            }
+            else
+            {
+                NavigationService.NavigationFrom();
+            }
         }
 
         /// <summary>

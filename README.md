@@ -146,6 +146,7 @@
 > * [cnbluefire](https://github.com/cnbluefire)&emsp;
 > * [飞翔](https://fionlen.azurewebsites.net)&emsp;
 > * [MouriNaruto](https://github.com/MouriNaruto)&emsp;
+> * [Ruofan](https://github.com/zhuxb711)&emsp;
 > * [TaylorShi](https://github.com/TaylorShi)&emsp;
 > * [wherewhere](https://github.com/wherewhere)&emsp;
 

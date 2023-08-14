@@ -138,7 +138,8 @@ All the content of the program has been developed
 > * [AndromedaMelody](https://github.com/AndromedaMelody)&emsp;
 > * [cnbluefire](https://github.com/cnbluefire)&emsp;
 > * [飞翔](https://fionlen.azurewebsites.net)&emsp;
-> * [MouriNaruto](https://github.com/MouriNaruto)&emsp;
+> * [MouriNaruto](https://github.com/MouriNaruto)&e
+> * [Ruofan](https://github.com/zhuxb711)&emsp;msp;
 > * [TaylorShi](https://github.com/TaylorShi)&emsp;
 > * [wherewhere](https://github.com/wherewhere)&emsp;
 
