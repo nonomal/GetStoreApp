@@ -1,7 +1,6 @@
 ﻿using GetStoreApp.Services.Root;
 using Microsoft.UI.Xaml;
 using System;
-using System.Diagnostics;
 using System.IO;
 using Windows.ApplicationModel;
 
@@ -99,18 +98,19 @@ namespace GetStoreApp.Helpers.Converters
         }
 
         /// <summary>
-        /// 检查应用图标是否存在，不存在返回空图标
+        /// 检测当前应用是否为商店应用
         /// </summary>
-        public static Uri GetAppLogo(Package packagePath)
+        public static Visibility IsStoreAppCheck(PackageSignatureKind packageSignatureKind)
         {
-            try
-            {
-                return packagePath.Logo;
-            }
-            catch
-            {
-                return null;
-            }
+            return packageSignatureKind is PackageSignatureKind.Store ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// 检测当前应用是否为系统应用（系统应用无法卸载）
+        /// </summary>
+        public static Visibility IsNotSystemAppCheck(PackageSignatureKind packageSignatureKind)
+        {
+            return packageSignatureKind is PackageSignatureKind.System ? Visibility.Collapsed : Visibility.Visible;
         }
     }
 }

@@ -10,7 +10,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Windows.ApplicationModel;
 using Windows.System;
-using WinRT;
 
 namespace GetStoreApp.Views.Pages
 {
@@ -71,7 +70,7 @@ namespace GetStoreApp.Views.Pages
         /// </summary>
         public async void OnQuerySubmitted(object sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            AppListPage appListPage = UWPAppFrame.Content.As<AppListPage>();
+            AppListPage appListPage = UWPAppFrame.Content as AppListPage;
             if (appListPage.Content is not null)
             {
                 appListPage.SearchText = SearchText;
@@ -84,10 +83,10 @@ namespace GetStoreApp.Views.Pages
         /// </summary>
         public async void OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-            AutoSuggestBox autoSuggestBox = sender.As<AutoSuggestBox>();
+            AutoSuggestBox autoSuggestBox = sender as AutoSuggestBox;
             if (autoSuggestBox is not null && autoSuggestBox.Text == string.Empty)
             {
-                AppListPage appListPage = UWPAppFrame.Content.As<AppListPage>();
+                AppListPage appListPage = UWPAppFrame.Content as AppListPage;
                 if (appListPage.Content is not null)
                 {
                     appListPage.SearchText = string.Empty;

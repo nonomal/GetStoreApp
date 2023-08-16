@@ -20,7 +20,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using WinRT;
 
 namespace GetStoreApp.UI.Controls.WinGet
 {
@@ -245,7 +244,7 @@ namespace GetStoreApp.UI.Controls.WinGet
         /// </summary>
         public void OnTextChanged(object sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-            AutoSuggestBox autoSuggestBox = sender.As<AutoSuggestBox>();
+            AutoSuggestBox autoSuggestBox = sender as AutoSuggestBox;
             if (autoSuggestBox is not null)
             {
                 if (autoSuggestBox.Text == string.Empty && MatchResultList is not null)

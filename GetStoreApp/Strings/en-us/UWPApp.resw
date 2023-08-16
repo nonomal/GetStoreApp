@@ -126,6 +126,15 @@
   <data name="AppType" xml:space="preserve">
     <value>App type</value>
   </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>App description</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>Display name</value>
+  </data>
   <data name="DisplayNameToolTip" xml:space="preserve">
     <value>App name: {0}</value>
   </data>
@@ -144,6 +153,9 @@
   <data name="InstallDateToolTip" xml:space="preserve">
     <value>Installed date: {0}</value>
   </data>
+  <data name="InstalledDate" xml:space="preserve">
+    <value>Installed date</value>
+  </data>
   <data name="IsFramework" xml:space="preserve">
     <value>Framework package</value>
   </data>
@@ -152,6 +164,12 @@
   </data>
   <data name="OpenApp" xml:space="preserve">
     <value>Open app</value>
+  </data>
+  <data name="OpenCacheFolder" xml:space="preserve">
+    <value>Open cache folder</value>
+  </data>
+  <data name="OpenFolder" xml:space="preserve">
+    <value>Open folder</value>
   </data>
   <data name="OpenInstalledFolder" xml:space="preserve">
     <value>Open installed folder</value>
@@ -182,6 +200,9 @@
   </data>
   <data name="PlaceHolderText" xml:space="preserve">
     <value>Search installed apps</value>
+  </data>
+  <data name="Publisher" xml:space="preserve">
+    <value>Publisher name</value>
   </data>
   <data name="PublisherToolTip" xml:space="preserve">
     <value>Publisher: {0}</value>
@@ -242,6 +263,12 @@
   </data>
   <data name="UnInstall" xml:space="preserve">
     <value>Uninstall</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Package version</value>
   </data>
   <data name="VersionToolTip" xml:space="preserve">
     <value>Version: {0}.{1}.{2}.{3}</value>
